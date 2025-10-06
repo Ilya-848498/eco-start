@@ -2275,3 +2275,76 @@ section {
     }
 }
 
+/* Стили для ошибок валидации форм */
+.input-error {
+    color: var(--accent-color) !important;
+    font-size: 0.8rem !important;
+    margin-top: 0.25rem !important;
+    font-weight: 500 !important;
+}
+
+.form-group input:invalid,
+.form-group select:invalid,
+.form-group textarea:invalid {
+    border-color: var(--accent-color) !important;
+}
+
+.form-group input:valid,
+.form-group select:valid,
+.form-group textarea:valid {
+    border-color: var(--primary-color) !important;
+}
+
+/* Улучшенные стили для модального окна */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: var(--white);
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    margin: 0 auto;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Адаптивность для модального окна */
+@media (max-width: 768px) {
+    .modal {
+        padding: 15px;
+        align-items: flex-start;
+    }
+    
+    .modal-content {
+        padding: 25px 20px;
+        max-width: 100%;
+        margin: 20px auto;
+        max-height: 85vh;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-content {
+        padding: 20px 15px;
+        max-height: 80vh;
+    }
+}

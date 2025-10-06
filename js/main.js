@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initBackToTop();
     initTypewriter();
     initModal();
-    initFormValidation();
     initAnimations();
     initVideoBackground();
 });
@@ -169,7 +168,6 @@ function initModal() {
     const modal = document.getElementById('order-modal');
     const closeBtn = document.querySelector('.close-modal');
     const orderButtons = document.querySelectorAll('button[data-product]');
-    const orderForm = document.getElementById('order-form');
     
     // Открытие модального окна
     orderButtons.forEach(button => {
@@ -187,7 +185,7 @@ function initModal() {
             }
             
             if (modal) {
-                modal.style.display = 'block';
+                modal.style.display = 'flex';
                 document.body.style.overflow = 'hidden';
             }
         });
@@ -208,164 +206,6 @@ function initModal() {
             document.body.style.overflow = '';
         }
     });
-    
-    // Обработка формы заказа
-    if (orderForm) {
-        orderForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Валидация формы
-            if (validateOrderForm()) {
-                // Имитация отправки
-                const formData = new FormData(this);
-                const orderData = {
-                    name: formData.get('name'),
-                    phone: formData.get('phone'),
-                    email: formData.get('email'),
-                    product: formData.get('product'),
-                    quantity: formData.get('quantity'),
-                    comment: formData.get('comment')
-                };
-                
-                console.log('Заказ оформлен:', orderData);
-                
-                // Показываем сообщение об успехе
-                showNotification('Заказ успешно оформлен! Мы свяжемся с вами в ближайшее время.', 'success');
-                
-                // Закрываем модальное окно
-                modal.style.display = 'none';
-                document.body.style.overflow = '';
-                
-                // Очищаем форму
-                this.reset();
-            }
-        });
-    }
-}
-
-// Валидация формы заказа
-function validateOrderForm() {
-    const name = document.getElementById('order-name');
-    const phone = document.getElementById('order-phone');
-    const email = document.getElementById('order-email');
-    const product = document.getElementById('order-product');
-    const consent = document.getElementById('order-consent');
-    
-    let isValid = true;
-    
-    // Валидация имени
-    if (!name.value.trim()) {
-        showInputError(name, 'Пожалуйста, введите ваше имя');
-        isValid = false;
-    } else {
-        removeInputError(name);
-    }
-    
-    // Валидация телефона
-    const phoneRegex = /^(\+7|8)[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
-    if (!phone.value.trim() || !phoneRegex.test(phone.value.replace(/\s/g, ''))) {
-        showInputError(phone, 'Пожалуйста, введите корректный номер телефона');
-        isValid = false;
-    } else {
-        removeInputError(phone);
-    }
-    
-    // Валидация email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.value.trim() || !emailRegex.test(email.value)) {
-        showInputError(email, 'Пожалуйста, введите корректный email');
-        isValid = false;
-    } else {
-        removeInputError(email);
-    }
-    
-    // Валидация товара
-    if (!product.value) {
-        showInputError(product, 'Пожалуйста, выберите товар');
-        isValid = false;
-    } else {
-        removeInputError(product);
-    }
-    
-    // Валидация согласия
-    if (!consent.checked) {
-        showInputError(consent, 'Необходимо согласие на обработку данных');
-        isValid = false;
-    } else {
-        removeInputError(consent);
-    }
-    
-    return isValid;
-}
-
-// Показать ошибку ввода
-function showInputError(input, message) {
-    removeInputError(input);
-    
-    const errorDiv = document.createElement('div');
-    errorDiv.className = 'input-error';
-    errorDiv.style.color = '#e74c3c';
-    errorDiv.style.fontSize = '0.8rem';
-    errorDiv.style.marginTop = '0.25rem';
-    errorDiv.textContent = message;
-    
-    input.parentNode.appendChild(errorDiv);
-    input.style.borderColor = '#e74c3c';
-}
-
-// Убрать ошибку ввода
-function removeInputError(input) {
-    const existingError = input.parentNode.querySelector('.input-error');
-    if (existingError) {
-        existingError.remove();
-    }
-    input.style.borderColor = '#e0e0e0';
-}
-
-// Показать уведомление
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 8px;
-        color: white;
-        font-weight: 500;
-        z-index: 3000;
-        max-width: 300px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        transform: translateX(400px);
-        transition: transform 0.3s ease;
-    `;
-    
-    if (type === 'success') {
-        notification.style.background = '#27ae60';
-    } else if (type === 'error') {
-        notification.style.background = '#e74c3c';
-    } else {
-        notification.style.background = '#3498db';
-    }
-    
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    // Анимация появления
-    setTimeout(() => {
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-    
-    // Автоматическое скрытие
-    setTimeout(() => {
-        notification.style.transform = 'translateX(400px)';
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.parentNode.removeChild(notification);
-            }
-        }, 300);
-    }, 5000);
 }
 
 // Анимации при скролле
@@ -412,79 +252,6 @@ function initVideoBackground() {
     }
 }
 
-// Валидация форм
-function initFormValidation() {
-    const feedbackForm = document.getElementById('feedback-form');
-    
-    if (feedbackForm) {
-        feedbackForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (validateFeedbackForm()) {
-                // Имитация отправки
-                const formData = new FormData(this);
-                const feedbackData = {
-                    name: formData.get('name'),
-                    phone: formData.get('phone'),
-                    email: formData.get('email'),
-                    product: formData.get('product'),
-                    message: formData.get('message')
-                };
-                
-                console.log('Форма отправлена:', feedbackData);
-                showNotification('Сообщение отправлено! Мы ответим вам в ближайшее время.', 'success');
-                this.reset();
-            }
-        });
-    }
-}
-
-// Валидация формы обратной связи
-function validateFeedbackForm() {
-    const name = document.getElementById('name');
-    const phone = document.getElementById('phone');
-    const email = document.getElementById('email');
-    const consent = document.getElementById('consent');
-    
-    let isValid = true;
-    
-    // Валидация имени
-    if (!name.value.trim()) {
-        showInputError(name, 'Пожалуйста, введите ваше имя');
-        isValid = false;
-    } else {
-        removeInputError(name);
-    }
-    
-    // Валидация телефона
-    const phoneRegex = /^(\+7|8)[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
-    if (!phone.value.trim() || !phoneRegex.test(phone.value.replace(/\s/g, ''))) {
-        showInputError(phone, 'Пожалуйста, введите корректный номер телефона');
-        isValid = false;
-    } else {
-        removeInputError(phone);
-    }
-    
-    // Валидация email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email.value.trim() || !emailRegex.test(email.value)) {
-        showInputError(email, 'Пожалуйста, введите корректный email');
-        isValid = false;
-    } else {
-        removeInputError(email);
-    }
-    
-    // Валидация согласия
-    if (!consent.checked) {
-        showInputError(consent, 'Необходимо согласие на обработку данных');
-        isValid = false;
-    } else {
-        removeInputError(consent);
-    }
-    
-    return isValid;
-}
-
 // Обработка изменения размера окна
 window.addEventListener('resize', function() {
     // Закрываем мобильное меню при изменении размера на десктоп
@@ -511,4 +278,3 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
-

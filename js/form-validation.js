@@ -1,6 +1,5 @@
 // Telegram бот
 const BOT_TOKEN = '8273272901:AAGcLtaTyVhd2TYt1FQP4qR2wW24Zh1dIpQ';
-// Установите ваш реальный CHAT_ID
 const CHAT_ID = '2077189118';
 
 // Функция отправки в Telegram
@@ -110,97 +109,170 @@ function showNotification(message, type = 'info') {
     }, 5000);
 }
 
+// Валидация формы
+function validateForm(form) {
+    let isValid = true;
+    
+    // Очищаем предыдущие ошибки
+    const errorElements = form.querySelectorAll('.input-error');
+    errorElements.forEach(error => error.remove());
+    
+    const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
+    inputs.forEach(input => {
+        input.style.borderColor = '#ddd';
+        
+        if (!input.value.trim()) {
+            showInputError(input, 'Это поле обязательно для заполнения');
+            isValid = false;
+        } else if (input.type === 'email' && !isValidEmail(input.value)) {
+            showInputError(input, 'Пожалуйста, введите корректный email');
+            isValid = false;
+        } else if (input.type === 'tel' && !isValidPhone(input.value)) {
+            showInputError(input, 'Пожалуйста, введите корректный номер телефона');
+            isValid = false;
+        }
+    });
+    
+    // Проверяем чекбоксы согласия
+    const consentCheckboxes = form.querySelectorAll('input[type="checkbox"][required]');
+    consentCheckboxes.forEach(checkbox => {
+        if (!checkbox.checked) {
+            showInputError(checkbox, 'Необходимо согласие на обработку данных');
+            isValid = false;
+        }
+    });
+    
+    return isValid;
+}
+
+// Валидация email
+function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+// Валидация телефона
+function isValidPhone(phone) {
+    const phoneRegex = /^(\+7|8)[\s\-]?\(?[0-9]{3}\)?[\s\-]?[0-9]{3}[\s\-]?[0-9]{2}[\s\-]?[0-9]{2}$/;
+    return phoneRegex.test(phone.replace(/\s/g, ''));
+}
+
+// Показать ошибку ввода
+function showInputError(input, message) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'input-error';
+    errorDiv.style.cssText = `
+        color: var(--accent-color);
+        font-size: 0.8rem;
+        margin-top: 0.25rem;
+        font-weight: 500;
+    `;
+    errorDiv.textContent = message;
+    
+    input.style.borderColor = 'var(--accent-color)';
+    input.parentNode.appendChild(errorDiv);
+}
+
 // Обработка формы обратной связи
+function handleFeedbackFormSubmit(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+
+    if (!validateForm(form)) {
+        showNotification('Пожалуйста, заполните все обязательные поля корректно', 'error');
+        return;
+    }
+
+    // Показываем загрузку
+    submitButton.textContent = 'Отправка...';
+    submitButton.disabled = true;
+
+    const formData = new FormData(form);
+    const message = formatFeedbackMessage(formData);
+
+    sendToTelegram(message)
+        .then(success => {
+            if (success) {
+                showNotification('Сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время.', 'success');
+                form.reset();
+            } else {
+                throw new Error('Ошибка отправки в Telegram');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showNotification('Произошла ошибка при отправке. Пожалуйста, попробуйте еще раз или свяжитесь с нами по телефону.', 'error');
+        })
+        .finally(() => {
+            // Восстанавливаем кнопку
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+        });
+}
+
+// Обработка формы заказа
+function handleOrderFormSubmit(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.textContent;
+
+    if (!validateForm(form)) {
+        showNotification('Пожалуйста, заполните все обязательные поля корректно', 'error');
+        return;
+    }
+
+    // Показываем загрузку
+    submitButton.textContent = 'Оформляем...';
+    submitButton.disabled = true;
+
+    const formData = new FormData(form);
+    const message = formatOrderMessage(formData);
+
+    sendToTelegram(message)
+        .then(success => {
+            if (success) {
+                showNotification('Заказ успешно оформлен! Мы свяжемся с вами для подтверждения.', 'success');
+                form.reset();
+                
+                // Закрываем модальное окно
+                const orderModal = document.getElementById('order-modal');
+                if (orderModal) {
+                    orderModal.style.display = 'none';
+                    document.body.style.overflow = 'auto';
+                }
+            } else {
+                throw new Error('Ошибка отправки в Telegram');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            showNotification('Произошла ошибка при оформлении заказа. Пожалуйста, попробуйте еще раз или свяжитесь с нами по телефону.', 'error');
+        })
+        .finally(() => {
+            // Восстанавливаем кнопку
+            submitButton.textContent = originalText;
+            submitButton.disabled = false;
+        });
+}
+
+// Инициализация форм
 document.addEventListener('DOMContentLoaded', function() {
     const feedbackForm = document.getElementById('feedback-form');
     const orderForm = document.getElementById('order-form');
-    const orderModal = document.getElementById('order-modal');
 
     // Обработка формы обратной связи
     if (feedbackForm) {
-        feedbackForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            // Валидация формы
-            if (!this.checkValidity()) {
-                showNotification('Пожалуйста, заполните все обязательные поля', 'error');
-                return;
-            }
-
-            // Показываем загрузку
-            submitButton.textContent = 'Отправка...';
-            submitButton.disabled = true;
-
-            const formData = new FormData(this);
-            const message = formatFeedbackMessage(formData);
-
-            try {
-                const success = await sendToTelegram(message);
-                
-                if (success) {
-                    showNotification('Сообщение успешно отправлено! Мы свяжемся с вами в ближайшее время.', 'success');
-                    this.reset();
-                } else {
-                    throw new Error('Ошибка отправки в Telegram');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                showNotification('Произошла ошибка при отправке. Пожалуйста, попробуйте еще раз или свяжитесь с нами по телефону.', 'error');
-            } finally {
-                // Восстанавливаем кнопку
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            }
-        });
+        feedbackForm.addEventListener('submit', handleFeedbackFormSubmit);
     }
 
     // Обработка формы заказа
     if (orderForm) {
-        orderForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const submitButton = this.querySelector('button[type="submit"]');
-            const originalText = submitButton.textContent;
-            
-            // Валидация формы
-            if (!this.checkValidity()) {
-                showNotification('Пожалуйста, заполните все обязательные поля', 'error');
-                return;
-            }
-
-            // Показываем загрузку
-            submitButton.textContent = 'Оформляем...';
-            submitButton.disabled = true;
-
-            const formData = new FormData(this);
-            const message = formatOrderMessage(formData);
-
-            try {
-                const success = await sendToTelegram(message);
-                
-                if (success) {
-                    showNotification('Заказ успешно оформлен! Мы свяжемся с вами для подтверждения.', 'success');
-                    this.reset();
-                    // Закрываем модальное окно
-                    if (orderModal) {
-                        orderModal.style.display = 'none';
-                        document.body.style.overflow = 'auto';
-                    }
-                } else {
-                    throw new Error('Ошибка отправки в Telegram');
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                showNotification('Произошла ошибка при оформлении заказа. Пожалуйста, попробуйте еще раз или свяжитесь с нами по телефону.', 'error');
-            } finally {
-                // Восстанавливаем кнопку
-                submitButton.textContent = originalText;
-                submitButton.disabled = false;
-            }
-        });
+        orderForm.addEventListener('submit', handleOrderFormSubmit);
     }
 
     // Обработка кнопок "Заказать" в слайдере
@@ -208,6 +280,7 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener('click', function() {
             const product = this.getAttribute('data-product');
             const orderProductInput = document.getElementById('order-product');
+            const orderModal = document.getElementById('order-modal');
             
             if (orderProductInput && orderModal) {
                 orderProductInput.value = product;
@@ -219,6 +292,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Закрытие модального окна
     const closeModal = document.querySelector('.close-modal');
+    const orderModal = document.getElementById('order-modal');
+    
     if (closeModal && orderModal) {
         closeModal.addEventListener('click', function() {
             orderModal.style.display = 'none';
@@ -243,10 +318,8 @@ document.addEventListener('DOMContentLoaded', function() {
             document.body.style.overflow = 'auto';
         }
     });
-});
 
-// Валидация телефона
-document.addEventListener('DOMContentLoaded', function() {
+    // Валидация телефона
     const phoneInputs = document.querySelectorAll('input[type="tel"]');
     
     phoneInputs.forEach(input => {
@@ -282,10 +355,8 @@ document.addEventListener('DOMContentLoaded', function() {
             input.placeholder = '+7 (XXX) XXX-XX-XX';
         }
     });
-});
 
-// Добавляем обработчик для поля количества в заказе
-document.addEventListener('DOMContentLoaded', function() {
+    // Обработчик для поля количества в заказе
     const quantityInput = document.getElementById('order-quantity');
     if (quantityInput) {
         quantityInput.addEventListener('change', function() {
